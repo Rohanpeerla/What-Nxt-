@@ -14,6 +14,7 @@ import {
 import { cn } from "./utils/cn";
 import { ActivityTimer } from "./components/ActivityTimer";
 import { CustomIdeaModal } from "./components/CustomIdeaModal";
+import { ChatCoach } from "./components/ChatCoach";
 
 type Location = "any" | "indoor" | "outdoor";
 type Company = "any" | "solo" | "social";
@@ -580,6 +581,14 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Interactive AI Vibe Coach */}
+      <ChatCoach
+        onStartTimer={(idea) => setActiveTimerIdea(idea)}
+        onAddCustomIdea={(idea) => handleAddCustomIdea(idea)}
+        onFavorite={(id) => toggleFavorite(id)}
+        favorites={favorites}
+      />
     </div>
   );
 }
