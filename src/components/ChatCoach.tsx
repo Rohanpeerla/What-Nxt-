@@ -153,33 +153,32 @@ export function ChatCoach({ onStartTimer, onAddCustomIdea, onFavorite, favorites
 
   return (
     <>
-      {/* Floating Toggle Button */}
-      <div className="fixed right-5 bottom-5 z-50 flex flex-col items-end gap-2">
-        {!isOpen && unreadCount > 0 && (
-          <div className="animate-bounce rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-lg shadow-violet-900/50">
-            💬 AI Coach: What's your vibe?
-          </div>
-        )}
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className={cn(
-            "group relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600 text-2xl text-white shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95",
-            isOpen ? "rotate-90 bg-slate-800" : "animate-pulse"
+      {/* Floating Toggle Button - Hidden when chat is open for maximum screen space */}
+      {!isOpen && (
+        <div className="fixed right-4 bottom-4 z-50 flex flex-col items-end gap-2 sm:right-6 sm:bottom-6">
+          {unreadCount > 0 && (
+            <div className="animate-bounce rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-lg shadow-violet-900/50">
+              💬 AI Coach: What's your vibe?
+            </div>
           )}
-          title="Open AI Vibe Coach"
-        >
-          {isOpen ? "✕" : "💬"}
-          {!isOpen && unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow">
-              {unreadCount}
-            </span>
-          )}
-        </button>
-      </div>
+          <button
+            onClick={() => setIsOpen(true)}
+            className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600 text-2xl text-white shadow-2xl animate-pulse transition-all duration-300 hover:scale-110 active:scale-95"
+            title="Open AI Vibe Coach"
+          >
+            💬
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow">
+                {unreadCount}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
 
-      {/* Chat Window / Drawer */}
+      {/* Chat Window / Drawer - Perfectly sized and positioned for mobile and desktop */}
       {isOpen && (
-        <div className="fixed right-4 bottom-24 z-50 flex h-[580px] w-[calc(100vw-2rem)] max-w-md flex-col overflow-hidden rounded-3xl border border-white/20 bg-slate-900/95 shadow-2xl backdrop-blur-xl animate-[fadeInUp_0.25s_ease-out] sm:right-6">
+        <div className="fixed right-3 bottom-3 z-50 flex h-[calc(100vh-1.5rem)] max-h-[580px] w-[calc(100vw-1.5rem)] max-w-[390px] flex-col overflow-hidden rounded-3xl border border-white/20 bg-slate-900/98 shadow-2xl backdrop-blur-xl animate-[fadeInUp_0.2s_ease-out] sm:right-6 sm:bottom-6 sm:max-w-[420px]">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-white/10 bg-slate-950/80 px-4 py-3.5">
             <div className="flex items-center gap-2.5">
