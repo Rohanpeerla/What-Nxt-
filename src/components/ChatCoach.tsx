@@ -45,6 +45,17 @@ export function ChatCoach({ onStartTimer, onAddCustomIdea, onFavorite, favorites
   const [showSettings, setShowSettings] = useState(false);
   const [apiKey, setApiKey] = useState(() => localStorage.getItem("whatnext:openai_key") || "");
 
+  // Adjustable / Resizable Window States
+  const [sizeMode, setSizeMode] = useState<"compact" | "expanded" | "fullscreen">("compact");
+  const [customSize, setCustomSize] = useState<{ width: number; height: number } | null>(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const resizeRef = useRef<{ startX: number; startY: number; startW: number; startH: number }>({
+    startX: 0,
+    startY: 0,
+    startW: 390,
+    startH: 580,
+  });
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -53,6 +64,51 @@ export function ChatCoach({ onStartTimer, onAddCustomIdea, onFavorite, favorites
       scrollToBottom();
     }
   }, [isOpen, messages]);
+
+  // Window manual drag-resize listener
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      const deltaX = resizeRef.current.startX - e.clientX;
+      const deltaY = resizeRef.current.startY - e.clientY;
+      const newW = Math.max(320, Math.min(window.innerWidth - 30, resizeRef.current.startW + deltaX));
+      const newH = Math.max(400, Math.min(window.innerHeight - 30, resizeRef.current.startH + deltaY));
+      setCustomSize({ width: newW, height: newH });
+    };
+
+    const handleMouseUp = () => {
+      if (isResizing) setIsResizing(false);
+    };
+
+    if (isResizing) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizing]);
+
+  const cycleSizeMode = () => {
+    setCustomSize(null);
+    if (sizeMode === "compact") setSizeMode("expanded");
+    else if (sizeMode === "expanded") setSizeMode("fullscreen");
+    else setSizeMode("compact");
+  };
+
+  const getWindowStyles = () => {
+    if (sizeMode === "fullscreen") {
+      return "fixed inset-0 z-50 flex h-full w-full flex-col overflow-hidden rounded-none border-0 bg-slate-900 shadow-2xl";
+    }
+    if (customSize) {
+      return "fixed right-3 bottom-3 z-50 flex flex-col overflow-hidden rounded-3xl border border-white/20 bg-slate-900/98 shadow-2xl backdrop-blur-xl sm:right-6 sm:bottom-6";
+    }
+    if (sizeMode === "expanded") {
+      return "fixed right-3 bottom-3 z-50 flex h-[calc(100vh-1.5rem)] max-h-[720px] w-[calc(100vw-1.5rem)] max-w-[550px] flex-col overflow-hidden rounded-3xl border border-white/20 bg-slate-900/98 shadow-2xl backdrop-blur-xl sm:right-6 sm:bottom-6";
+    }
+    return "fixed right-3 bottom-3 z-50 flex h-[calc(100vh-1.5rem)] max-h-[580px] w-[calc(100vw-1.5rem)] max-w-[390px] flex-col overflow-hidden rounded-3xl border border-white/20 bg-slate-900/98 shadow-2xl backdrop-blur-xl animate-[fadeInUp_0.2s_ease-out] sm:right-6 sm:bottom-6 sm:max-w-[420px]";
+  };
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -176,11 +232,36 @@ export function ChatCoach({ onStartTimer, onAddCustomIdea, onFavorite, favorites
         </div>
       )}
 
-      {/* Chat Window / Drawer - Perfectly sized and positioned for mobile and desktop */}
+      {/* Chat Window / Drawer - Completely Adjustable & Resizable */}
       {isOpen && (
-        <div className="fixed right-3 bottom-3 z-50 flex h-[calc(100vh-1.5rem)] max-h-[580px] w-[calc(100vw-1.5rem)] max-w-[390px] flex-col overflow-hidden rounded-3xl border border-white/20 bg-slate-900/98 shadow-2xl backdrop-blur-xl animate-[fadeInUp_0.2s_ease-out] sm:right-6 sm:bottom-6 sm:max-w-[420px]">
+        <div
+          className={getWindowStyles()}
+          style={sizeMode !== "fullscreen" && customSize ? { width: `${customSize.width}px`, height: `${customSize.height}px` } : undefined}
+        >
+          {/* Top-Left Manual Resize Grip */}
+          {sizeMode !== "fullscreen" && (
+            <div
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const currentBox = e.currentTarget.parentElement?.getBoundingClientRect();
+                resizeRef.current = {
+                  startX: e.clientX,
+                  startY: e.clientY,
+                  startW: currentBox?.width || customSize?.width || 390,
+                  startH: currentBox?.height || customSize?.height || 580,
+                };
+                setIsResizing(true);
+              }}
+              className="absolute top-0 left-0 z-50 flex h-7 w-7 cursor-nwse-resize items-center justify-center rounded-br-xl bg-white/10 text-xs text-slate-400 transition hover:bg-violet-600 hover:text-white"
+              title="Drag here to manually resize chat window"
+            >
+              ↖️
+            </div>
+          )}
+
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-white/10 bg-slate-950/80 px-4 py-3.5">
+          <div className="flex items-center justify-between border-b border-white/10 bg-slate-950/90 pl-8 pr-4 py-3.5 select-none">
             <div className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-lg shadow">
                 🤖
@@ -191,12 +272,27 @@ export function ChatCoach({ onStartTimer, onAddCustomIdea, onFavorite, favorites
                   <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
                 </div>
                 <div className="text-[11px] text-slate-400">
-                  {apiKey ? "⚡ GPT-4 Connected" : "🧠 Smart Coach Engine"}
+                  {sizeMode === "compact" ? "Compact" : sizeMode === "expanded" ? "Expanded Wide" : "Fullscreen"} · {apiKey ? "⚡ GPT-4" : "🧠 Smart Coach"}
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-1">
+              {/* Size Cycle Button */}
+              <button
+                onClick={cycleSizeMode}
+                className="rounded-lg bg-white/5 px-2 py-1.5 text-xs text-slate-300 transition hover:bg-white/15 hover:text-white"
+                title={
+                  sizeMode === "compact"
+                    ? "Expand to Wide View (↗️)"
+                    : sizeMode === "expanded"
+                    ? "Maximize to Fullscreen (⛶)"
+                    : "Restore to Compact View (↙️)"
+                }
+              >
+                {sizeMode === "compact" ? "↗️ Expand" : sizeMode === "expanded" ? "⛶ Maximize" : "↙️ Compact"}
+              </button>
+
               <button
                 onClick={() => setShowSettings(!showSettings)}
                 className="rounded-lg p-1.5 text-slate-400 transition hover:bg-white/10 hover:text-white"
